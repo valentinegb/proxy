@@ -154,6 +154,7 @@ name = "proxy"
 version = "0.1.0"
 dependencies = [
  "fast-socks5",
+ "tokio",
 ]
 
 [[package]]
