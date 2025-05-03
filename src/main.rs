@@ -1,19 +1,45 @@
 use anyhow::anyhow;
+use async_trait::async_trait;
 use fast_socks5::{
     SocksError,
-    server::{self, DenyAuthentication, SimpleUserPassword, Socks5Server},
+    server::{self, AuthSucceeded, Authentication, DenyAuthentication, Socks5Server},
 };
+use sha2::{Digest, Sha256, digest::generic_array::functional::FunctionalSequence};
 use tokio_stream::StreamExt as _;
 use tracing::{debug, error, info};
+
+struct HashedPasswordAuthentication {
+    username: String,
+    /// A SHA-256 encrypted password hash.
+    password_hash: String,
+}
+
+#[async_trait]
+impl Authentication for HashedPasswordAuthentication {
+    type Item = AuthSucceeded;
+
+    async fn authenticate(&self, credentials: Option<(String, String)>) -> Option<Self::Item> {
+        credentials.and_then(|(username, password)| {
+            (username == self.username
+                && Sha256::digest(password.as_bytes())
+                    .map(|byte| format!("{byte:x}"))
+                    .join("")
+                    == self.password_hash)
+                .then_some(AuthSucceeded { username })
+        })
+    }
+}
 
 async fn try_main() -> anyhow::Result<()> {
     let server = Socks5Server::<DenyAuthentication>::bind("127.0.0.1:1080")
         .await?
         .with_config(
             server::Config::<DenyAuthentication>::default().with_authentication(
-                SimpleUserPassword {
+                HashedPasswordAuthentication {
                     username: "valentinegb".to_string(),
-                    password: "xuhtez-7gixsy-Hiwcyc".to_string(),
+                    password_hash:
+                        "bad001813383a2fbc884ba78e25ba61b6224bfa902cd27b614b295a906d146d2"
+                            .to_string(),
                 },
             ),
         );
