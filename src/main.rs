@@ -31,7 +31,7 @@ impl Authentication for HashedPasswordAuthentication {
 }
 
 async fn try_main() -> anyhow::Result<()> {
-    let server = Socks5Server::<DenyAuthentication>::bind("127.0.0.1:1080")
+    let server = Socks5Server::<DenyAuthentication>::bind("0.0.0.0:1080")
         .await?
         .with_config(
             server::Config::<DenyAuthentication>::default().with_authentication(
