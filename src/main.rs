@@ -20,11 +20,13 @@ impl Authentication for HashedPasswordAuthentication {
 
     async fn authenticate(&self, credentials: Option<(String, String)>) -> Option<Self::Item> {
         credentials.and_then(|(username, password)| {
-            (username == self.username
-                && Sha256::digest(password.as_bytes())
-                    .map(|byte| format!("{byte:2x}"))
-                    .join("")
-                    == self.password_hash)
+            let password_hash = Sha256::digest(password.as_bytes())
+                .map(|byte| format!("{byte:2x}"))
+                .join("");
+
+            assert_eq!(password_hash, self.password_hash);
+
+            (username == self.username && password_hash == self.password_hash)
                 .then_some(AuthSucceeded { username })
         })
     }
