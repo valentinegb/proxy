@@ -20,14 +20,15 @@ impl Authentication for HashedPasswordAuthentication {
 
     async fn authenticate(&self, credentials: Option<(String, String)>) -> Option<Self::Item> {
         credentials.and_then(|(username, password)| {
+            let username_matches = username == self.username;
             let password_hash = Sha256::digest(password.as_bytes())
                 .map(|byte| format!("{byte:x}"))
                 .join("");
+            let password_matches = password_hash == self.password_hash;
 
-            debug!(?password, ?password_hash);
+            debug!(?username, ?self.username, ?username_matches, ?password_matches);
 
-            (username == self.username && password_hash == self.password_hash)
-                .then_some(AuthSucceeded { username })
+            (username_matches && password_matches).then_some(AuthSucceeded { username })
         })
     }
 }
