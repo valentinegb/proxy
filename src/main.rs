@@ -24,8 +24,6 @@ impl Authentication for HashedPasswordAuthentication {
                 .map(|byte| format!("{byte:02x}"))
                 .join("");
 
-            assert_eq!(password_hash, self.password_hash);
-
             (username == self.username && password_hash == self.password_hash)
                 .then_some(AuthSucceeded { username })
         })
@@ -33,18 +31,19 @@ impl Authentication for HashedPasswordAuthentication {
 }
 
 async fn try_main() -> anyhow::Result<()> {
+    let mut config = server::Config::<DenyAuthentication>::default().with_authentication(
+        HashedPasswordAuthentication {
+            username: "valentinegb".to_string(),
+            password_hash: "bad001813383a2fbc884ba78e25ba61b6224bfa902cd27b614b295a906d146d2"
+                .to_string(),
+        },
+    );
+
+    config.set_udp_support(true);
+
     let server = Socks5Server::<DenyAuthentication>::bind("0.0.0.0:1080")
         .await?
-        .with_config(
-            server::Config::<DenyAuthentication>::default().with_authentication(
-                HashedPasswordAuthentication {
-                    username: "valentinegb".to_string(),
-                    password_hash:
-                        "bad001813383a2fbc884ba78e25ba61b6224bfa902cd27b614b295a906d146d2"
-                            .to_string(),
-                },
-            ),
-        );
+        .with_config(config);
     let mut incoming = server.incoming();
 
     info!("Listening for incoming connections");
