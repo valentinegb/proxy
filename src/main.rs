@@ -21,7 +21,7 @@ impl Authentication for HashedPasswordAuthentication {
     async fn authenticate(&self, credentials: Option<(String, String)>) -> Option<Self::Item> {
         credentials.and_then(|(username, password)| {
             let password_hash = Sha256::digest(password.as_bytes())
-                .map(|byte| format!("{byte:2x}"))
+                .map(|byte| format!("{byte:02x}"))
                 .join("");
 
             assert_eq!(password_hash, self.password_hash);
